@@ -62,24 +62,96 @@ int main()
     int bytesPerLine2 = width * 2;
 
     float T = initialTemperature;
-    //while (T > minTemperature)
+    while (T > minTemperature)
+    {
+        std::uniform_int_distribution<int> dist(-3, 3);
+        std::uniform_real_distribution<float> fDist(0.f, 1.f);
+        int offset = 0;
+        for (size_t j = 0; j < height; j++)
+        {
+            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            for (size_t i = 0; i < width; i++)
+            {
+                int randomNumX = dist(random);
+                int randomNumY = dist(random);
+    
+                int locX = i + randomNumX;
+                int locY = j + randomNumY;
+                if (CheckBounds(locX, width) && CheckBounds(locY, height))
+                {
+                    auto pixel = data + locY * bytesPerLine + locX * 4;
+                    auto outLoc = dataOut + j * bytesPerLine + i * 4;
+    
+                    {
+                        outLoc[0] = (i);
+                        outLoc[1] = (j);
+                        outLoc[2] = 0;
+                        outLoc[3] = 255;
+                    }
+    
+                    float r2X, r2Y;
+    
+                    GenerateR2Sequence(1, r2X, r2Y);
+    
+                    auto ir2X = static_cast<int>(r2X * width);
+                    auto ir2Y = static_cast<int>(r2Y * height);
+    
+                    int newJ = ((j + ir2Y) % height);
+                    int newI = ((i + ir2X) % width);
+    
+                    auto modifiedPixel = data +  newJ* bytesPerLine + newI * 4;
+    
+                    if (((pixel[0] - modifiedPixel[0]) / T) > fDist(random))
+                    {
+                        outLoc[0] = locX;
+                        outLoc[1] = locY;
+                        outLoc[2] = 0;
+                        outLoc[3] = 255;
+
+                        pixel[0] = i;
+                        pixel[1] = j;
+                        pixel[2] = 0;
+                        pixel[3] = 255;
+    
+                    }
+                }
+    
+                
+            }
+        }
+    
+        T *= reductionFactor;
+    }
+
+
+    //std::uniform_int_distribution<int> dist(-6, 6);
+    //std::uniform_real_distribution<float> fDist(0.f, 1.f);
+    //int offset = 0;
+    //for (size_t j = 0; j < height; j++)
     //{
-    //    std::uniform_int_distribution<int> dist(-3, 3);
-    //    std::uniform_real_distribution<float> fDist(0.f, 1.f);
-    //    int offset = 0;
-    //    for (size_t j = 0; j < height; j++)
+    //    std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+    //    for (size_t i = 0; i < width; i++)
     //    {
-    //        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-    //        for (size_t i = 0; i < width; i++)
+    //
+    //        float T = initialTemperature;
+    //        while (T > minTemperature)
     //        {
+    //
     //            int randomNumX = dist(random);
     //            int randomNumY = dist(random);
-    //
     //            int locX = i + randomNumX;
     //            int locY = j + randomNumY;
-    //            if (CheckBounds(j, width) && CheckBounds(i, height))
+    //            if (CheckBounds(locX, width) && CheckBounds(locY, height))
     //            {
-    //                auto pixel = data + j * bytesPerLine + i * 4;
+    //                auto pixel = data +  locY* bytesPerLine + locX * 4;
+    //                auto outLoc = dataOut + j * bytesPerLine + i * 4;
+    //
+    //                {
+    //                    outLoc[0] = (i);
+    //                    outLoc[1] = (j);
+    //                    outLoc[2] = 0;
+    //                    outLoc[3] = 255;
+    //                }
     //
     //                float r2X, r2Y;
     //
@@ -88,68 +160,27 @@ int main()
     //                auto ir2X = static_cast<int>(r2X * width);
     //                auto ir2Y = static_cast<int>(r2Y * height);
     //
-    //                auto modifiedPixel = data + ir2Y * bytesPerLine + ir2X * 4;
+    //                auto modifiedPixel = data + ((j+ir2Y)%height) * bytesPerLine + ((i+ir2X)%width) * 4;
     //
     //                if (((pixel[0] - modifiedPixel[0]) / T) > fDist(random))
     //                {
-    //                    unsigned char temp = pixel[0];
-    //                    pixel[0] = modifiedPixel[0];
-    //                    modifiedPixel[0] = pixel[0];
+    //                    outLoc[0] = locX;
+    //                    outLoc[1] = locY;
+    //                    outLoc[2] = 0;
+    //                    outLoc[3] = 255;
+    //
+    //                    pixel[0] = i;
+    //                    pixel[1] = j;
+    //                    pixel[2] = 0;
+    //                    pixel[3] = 255;
+    //
     //                }
     //            }
     //
-    //            
+    //            T *= reductionFactor;
     //        }
     //    }
-    //
-    //    T *= reductionFactor;
     //}
-
-
-    std::uniform_int_distribution<int> dist(-3, 3);
-    std::uniform_real_distribution<float> fDist(0.f, 1.f);
-    int offset = 0;
-    for (size_t j = 0; j < height; j++)
-    {
-        std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
-        for (size_t i = 0; i < width; i++)
-        {
-    
-            float T = initialTemperature;
-            while (T > minTemperature)
-            {
-    
-                int randomNumX = dist(random);
-                int randomNumY = dist(random);
-                int locX = i + randomNumX;
-                int locY = j + randomNumY;
-                if (CheckBounds(locX, width) && CheckBounds(locY, height))
-                {
-                    auto pixel = data +  locY* bytesPerLine + locX * 4;
-                    auto outLoc = dataOut + j * bytesPerLine + i * 4;
-                    float r2X, r2Y;
-    
-                    GenerateR2Sequence(1, r2X, r2Y);
-    
-                    auto ir2X = static_cast<int>(r2X * width);
-                    auto ir2Y = static_cast<int>(r2Y * height);
-    
-                    auto modifiedPixel = data + ((j+ir2Y)%height) * bytesPerLine + ((i+ir2X)%width) * 4;
-    
-                    if (((pixel[0] - modifiedPixel[0]) / T) > fDist(random))
-                    {
-                        outLoc[0] = i + ir2X;
-                        outLoc[1] = j + ir2Y;
-                        outLoc[2] = 0;
-                        outLoc[3] = 255;
-
-                    }
-                }
-
-                T *= reductionFactor;
-            }
-        }
-    }
 
 
     stbi_write_png("Textures/Retarget.png", width, height, 4, dataOut, 0);
