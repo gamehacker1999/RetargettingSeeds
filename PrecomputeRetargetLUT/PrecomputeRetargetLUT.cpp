@@ -106,13 +106,13 @@ int main()
     
                     if (((pixel[0] - modifiedPixel[0]) / T) > fDist(random))
                     {
-                        outLoc[0] = locX;
-                        outLoc[1] = locY;
+                        outLoc[0] = (locX/width)*255.99;
+                        outLoc[1] = (locY/height)*255.99;
                         outLoc[2] = 0;
                         outLoc[3] = 255;
 
-                        pixel[0] = i;
-                        pixel[1] = j;
+                        pixel[0] = (i/width)*255.99;
+                        pixel[1] = (j/height)*255.99;
                         pixel[2] = 0;
                         pixel[3] = 255;
     
