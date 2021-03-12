@@ -45,7 +45,7 @@ int main()
     int width;
     int height;
     int comp;
-    unsigned char* data = stbi_load("Textures/BlueNoise512.png", &width, &height, &comp, 4);
+    unsigned char* data = stbi_load("Textures/BlueNoiseRes.png", &width, &height, &comp, 4);
 
     float initialTemperature = 1.f;
     float minTemperature = 0.0001f;
@@ -64,12 +64,12 @@ int main()
     float T = initialTemperature;
     while (T > minTemperature)
     {
-        std::uniform_int_distribution<int> dist(-3, 3);
+        std::uniform_int_distribution<int> dist(-6, 6);
         std::uniform_real_distribution<float> fDist(0.f, 1.f);
         int offset = 0;
         for (size_t j = 0; j < height; j++)
         {
-            std::cerr << "\rScanlines remaining: " << j << ' ' << std::flush;
+            std::cerr << "\rScanlines remaining: " << (height - j) << ' ' << std::flush;
             for (size_t i = 0; i < width; i++)
             {
                 int randomNumX = dist(random);
@@ -92,6 +92,9 @@ int main()
                     float r2X, r2Y;
     
                     GenerateR2Sequence(1, r2X, r2Y);
+
+                    //r2X = r2X * 2.f - 1.f;
+                    //r2Y = r2Y * 2.f - 1.f;
     
                     auto ir2X = static_cast<int>(r2X * width);
                     auto ir2Y = static_cast<int>(r2Y * height);
