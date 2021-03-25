@@ -93,7 +93,7 @@ int main()
     int width;
     int height;
     int comp;
-    unsigned char* data = stbi_load("Textures/BlueNoise512.png", &width, &height, &comp, 4);
+    unsigned char* data = stbi_load("Textures/BlueNoiseRes.png", &width, &height, &comp, 4);
 
     float initialTemperature = 1.f;
     float reductionFactor = 0.0001f;
