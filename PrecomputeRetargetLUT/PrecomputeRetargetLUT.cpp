@@ -40,33 +40,58 @@ bool CheckBounds(int x, int max)
     return false;
 }
 
-
-float Energy(unsigned char* data, int dimension)
+void CreateTargetTexture(unsigned char* source, unsigned char* target, int w, int h)
 {
     float x;
     float y;
 
     GenerateR2Sequence(1, x, y);
 
-    int xOffset = static_cast<int>(x * dimension);
-    int yOffset = static_cast<int>(y * dimension);
-    
-    int bytesPerLine = dimension * 4;
+    int xOffset = static_cast<int>(x * w);
+    int yOffset = static_cast<int>(y * h);
+
+    int bytesPerLine = w * 4;
 
     float energy = 0.0f;
-    for (size_t j = 0; j < dimension; j++)
+    for (size_t j = 0; j < h; j++)
     {
-        for (size_t i = 0; i < dimension; i++)
+        for (size_t i = 0; i < w; i++)
+        {
+            auto pixel = target + j * bytesPerLine + i * 4;
+
+            int newX = (i + xOffset) % w;
+            int newY = (j + yOffset) % h;
+
+            auto movedPixel = source + newY * bytesPerLine + newX * 4;
+
+            pixel[0] = movedPixel[0];
+            pixel[1] = movedPixel[1];
+            pixel[2] = movedPixel[2];
+            pixel[3] = movedPixel[3];
+
+
+        }
+    }
+
+}
+
+
+float Energy(unsigned char* data, unsigned char* target, int wdimension, int hdimension)
+{
+   
+    int bytesPerLine = wdimension * 4;
+
+    float energy = 0.0f;
+    for (size_t j = 0; j < hdimension; j++)
+    {
+        for (size_t i = 0; i < wdimension; i++)
         {
             auto pixel = data + j * bytesPerLine + i * 4;
 
-            int newX = (i + xOffset) % dimension;
-            int newY = (j + yOffset) % dimension;
+            auto movedPixel = target + j * bytesPerLine + i * 4;
 
-            auto movedPixel = data + newY * bytesPerLine + newX * 4;
-
-            float distanceSquared = (movedPixel - pixel)* (movedPixel - pixel);
-            energy += distanceSquared;
+            float differenceSquared = (movedPixel[0] - pixel[0])* (movedPixel[0] - pixel[0]);
+            energy += differenceSquared;
 
         }
     }
@@ -93,46 +118,49 @@ int main()
     int width;
     int height;
     int comp;
-    unsigned char* data = stbi_load("Textures/BlueNoiseRes.png", &width, &height, &comp, 4);
+    unsigned char* data = stbi_load("Textures/BlueNoise256.png", &width, &height, &comp, 4);
 
     float initialTemperature = 1.f;
     float reductionFactor = 0.0001f;
     float swapCountFactor = 0.01f;
 
-    int64_t numSwaps = int64_t(swapCountFactor * double(512 * 512)); // how many swaps per trial
-    float coolingRate = 1.0f / (reductionFactor * double(32 * 32*32*32)); // how much the temperature cools each iteration
+    int64_t numSwaps = int64_t(swapCountFactor * double(width * height)); // how many swaps per trial
+    float coolingRate = 1.0f / (reductionFactor * double(width * height)); // how much the temperature cools each iteration
 
     float* dataOut = new float[width * height * 4];
     unsigned char* swapData = new unsigned char[width * height * 4];
+    unsigned char* targetTexture = new unsigned char[width * height * 4];
+
+    CreateTargetTexture(data, targetTexture, width, height);
+
+
 
     std::random_device rd;
 
     std::mt19937 random(rd());
 
     int bytesPerLine = width * 4;
-    int bytesPerLine2 = width * 2;
 
     float T = initialTemperature;
 
-    float energy = Energy(data, 512);
+    float energy = Energy(data, targetTexture,width, height);
 
     std::uniform_real_distribution<float> dist(0.0f, 1.0f);
 
-    std::uniform_int_distribution<int> iDist(0, 512);
+    std::uniform_int_distribution<int> iDistW(0, width-1);
+    std::uniform_int_distribution<int> iDistH(0, height-1);
+    std::uniform_int_distribution<int> iDist6(-3, 3);
 
-    for (size_t j = 0; j < 512; j++)
+    for (size_t j = 0; j < height; j++)
     {
-        for (size_t i = 0; i < 512; i++)
+        for (size_t i = 0; i < width; i++)
         {
             auto pixel = dataOut + j * bytesPerLine + i * 4;
 
-            float xVal = map(i, 0, 511, 0, 255);
-            float yVal = map(j, 0, 511, 0, 255);
-
-            pixel[0] = xVal;
-            pixel[1] = yVal;
+            pixel[0] = float(i);
+            pixel[1] = float(j);
             pixel[2] = 0;
-            pixel[3] = 1.f;
+            pixel[3] = 255.f;
         }
     }
 
@@ -146,21 +174,21 @@ int main()
 
         swapData = data;
 
-        uint32_t indexAx = iDist(random);
-        uint32_t indexAy = iDist(random);
+        uint32_t indexAx = iDistW(random);
+        uint32_t indexAy = iDistH(random);
 
-        uint32_t indexBx = iDist(random);
-        uint32_t indexBy = iDist(random);
+        uint32_t indexBx = (indexAx + iDist6(random)) % width;
+        uint32_t indexBy = (indexAy + iDist6(random)) % height;
 
         auto indexA = indexAy * bytesPerLine + indexAx * 4;
         auto indexB = indexBy * bytesPerLine + indexBx * 4;
 
         std::swap(swapData[indexA], swapData[indexB]);
 
-        float swapEnergy = Energy(swapData, 512);
+        float swapEnergy = Energy(swapData, targetTexture, width, height);
 
         float rng01 = dist(random);
-        if (((swapEnergy < energy) && PixelDistance(indexAx, indexAy,indexBx, indexBy)<=36) || rng01 < T)
+        if ((swapEnergy < energy) || rng01 < T)
         {
             data = swapData;
             energy = swapEnergy;
@@ -171,9 +199,10 @@ int main()
 
     }
 
-    stbi_write_png("Textures/Retarget1.png", width, height, 4, dataOut, 0);
+    stbi_write_png("Textures/Retarget3.png", width, height, 4, dataOut, width*4);
 
     delete[] dataOut;
     delete[] swapData;
+    delete[] targetTexture;
 
 }
