@@ -124,8 +124,8 @@ int main()
     float reductionFactor = 0.0001f;
     float swapCountFactor = 0.01f;
 
-    int64_t numSwaps = int64_t(swapCountFactor * double(width * height)); // how many swaps per trial
-    float coolingRate = 1.0f / (reductionFactor * double(width * height)); // how much the temperature cools each iteration
+    uint64_t numSwaps = uint64_t(swapCountFactor * long(width * height*100)); // how many swaps per trial
+    float coolingRate = 1.0f / (reductionFactor * double(width * height*100)); // how much the temperature cools each iteration
 
     float* dataOut = new float[width * height * 4];
     unsigned char* swapData = new unsigned char[width * height * 4];
@@ -172,13 +172,13 @@ int main()
 
         T = std::max(T - coolingRate, 0.0f);
 
-        swapData = data;
+        memcpy(swapData, data, width*height*4*sizeof(unsigned char));
 
         uint32_t indexAx = iDistW(random);
         uint32_t indexAy = iDistH(random);
 
-        uint32_t indexBx = (indexAx + iDist6(random)) % width;
-        uint32_t indexBy = (indexAy + iDist6(random)) % height;
+        uint32_t indexBx = (std::labs(indexAx + iDist6(random))) % width;
+        uint32_t indexBy = (std::labs(indexAy + iDist6(random))) % height;
 
         auto indexA = indexAy * bytesPerLine + indexAx * 4;
         auto indexB = indexBy * bytesPerLine + indexBx * 4;
@@ -190,7 +190,7 @@ int main()
         float rng01 = dist(random);
         if ((swapEnergy < energy) || rng01 < T)
         {
-            data = swapData;
+            memcpy(data, swapData, width * height * 4 * sizeof(unsigned char));
             energy = swapEnergy;
 
             std::swap(dataOut[indexA], dataOut[indexB]);
